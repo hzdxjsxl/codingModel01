@@ -81,10 +81,7 @@ class User {
     );
     saveDatabase();
     
-    const lastIdResult = db.exec('SELECT last_insert_rowid() as id');
-    const lastId = lastIdResult[0].values[0][0];
-    
-    return User.findById(lastId);
+    return User.findByUsername(username);
   }
   
   static verifyPassword(user, password) {
