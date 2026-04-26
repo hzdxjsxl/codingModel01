@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS form_templates (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    schema_json TEXT NOT NULL
+);

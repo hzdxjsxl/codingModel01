@@ -1,0 +1,218 @@
+<template>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>动态表单系统</h1>
+      <p class="subtitle">基于 JSON Schema 驱动的动态表单</p>
+    </header>
+    
+    <main class="app-main">
+      <div class="template-selector">
+        <label for="templateId">表单模板 ID:</label>
+        <input 
+          id="templateId" 
+          v-model.number="templateId" 
+          type="number" 
+          min="1"
+        />
+        <button @click="loadFormTemplate" :disabled="loading">
+          {{ loading ? '加载中...' : '加载表单' }}
+        </button>
+      </div>
+      
+      <div v-if="error" class="error-message">
+        {{ error }}
+      </div>
+      
+      <DynamicForm 
+        v-if="formSchema" 
+        :schema="formSchema"
+        @submit="handleSubmit"
+      />
+      
+      <div v-if="submittedData" class="result-section">
+        <h3>提交的数据:</h3>
+        <pre>{{ JSON.stringify(submittedData, null, 2) }}</pre>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import axios from 'axios'
+import DynamicForm from './components/DynamicForm.vue'
+
+const fallbackSchema = {
+  title: "用户注册表单",
+  fields: [
+    {
+      name: "userType",
+      label: "用户类型",
+      type: "select",
+      required: true,
+      options: [
+        { value: "personal", label: "个人用户" },
+        { value: "enterprise", label: "企业用户" }
+      ]
+    },
+    {
+      name: "name",
+      label: "姓名",
+      type: "text",
+      required: true,
+      rules: [
+        {
+          condition: "userType === 'personal'",
+          action: "show",
+          message: "个人用户需要填写姓名"
+        },
+        {
+          condition: "userType === 'personal'",
+          action: "required",
+          message: "姓名为必填项"
+        }
+      ]
+    },
+    {
+      name: "idCard",
+      label: "身份证号",
+      type: "text",
+      required: false,
+      rules: [
+        {
+          condition: "userType === 'personal'",
+          action: "show",
+          message: "个人用户需要填写身份证号"
+        }
+      ]
+    },
+    {
+      name: "companyName",
+      label: "公司名称",
+      type: "text",
+      required: false,
+      rules: [
+        {
+          condition: "userType === 'enterprise'",
+          action: "show",
+          message: "企业用户需要填写公司名称"
+        },
+        {
+          condition: "userType === 'enterprise'",
+          action: "required",
+          message: "公司名称为必填项"
+        }
+      ]
+    },
+    {
+      name: "taxNumber",
+      label: "税号",
+      type: "text",
+      required: false,
+      rules: [
+        {
+          condition: "userType === 'enterprise'",
+          action: "show",
+          message: "企业用户需要填写税号"
+        }
+      ]
+    },
+    {
+      name: "needInvoice",
+      label: "是否需要发票",
+      type: "checkbox",
+      required: false
+    },
+    {
+      name: "invoiceTitle",
+      label: "发票抬头",
+      type: "text",
+      required: false,
+      rules: [
+        {
+          condition: "needInvoice === true",
+          action: "show",
+          message: "需要发票时请填写发票抬头"
+        },
+        {
+          condition: "needInvoice === true",
+          action: "required",
+          message: "发票抬头为必填项"
+        }
+      ]
+    },
+    {
+      name: "invoiceType",
+      label: "发票类型",
+      type: "radio",
+      required: false,
+      options: [
+        { value: "personal", label: "个人发票" },
+        { value: "company", label: "公司发票" }
+      ],
+      rules: [
+        {
+          condition: "needInvoice === true",
+          action: "show",
+          message: "需要发票时请选择发票类型"
+        }
+      ]
+    },
+    {
+      name: "email",
+      label: "电子邮箱",
+      type: "email",
+      required: true
+    },
+    {
+      name: "phone",
+      label: "手机号码",
+      type: "tel",
+      required: true
+    }
+  ]
+}
+
+const templateId = ref(1)
+const formSchema = ref(null)
+const loading = ref(false)
+const error = ref(null)
+const submittedData = ref(null)
+
+const loadFormTemplate = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const response = await axios.get(`http://localhost:8081/api/form-templates/${templateId.value}`)
+    if (typeof response.data === 'string') {
+      const parsed = JSON.parse(response.data)
+      if (parsed && parsed.fields && Array.isArray(parsed.fields)) {
+        formSchema.value = parsed
+      } else {
+        console.log('使用备用表单数据（后端数据格式不正确）')
+        formSchema.value = fallbackSchema
+      }
+    } else if (response.data && response.data.fields && Array.isArray(response.data.fields)) {
+      formSchema.value = response.data
+    } else {
+      console.log('使用备用表单数据（后端数据格式不正确）')
+      formSchema.value = fallbackSchema
+    }
+    submittedData.value = null
+  } catch (err) {
+    console.log('使用备用表单数据', err.message)
+    formSchema.value = fallbackSchema
+    submittedData.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSubmit = (data) => {
+  submittedData.value = data
+  console.log('表单提交数据:', data)
+}
+
+loadFormTemplate()
+</script>
