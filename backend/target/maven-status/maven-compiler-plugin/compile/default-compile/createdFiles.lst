@@ -1,0 +1,5 @@
+com\finance\repository\FinancialRecordRepository.class
+com\finance\service\DataInitializationService.class
+com\finance\FinanceApplication.class
+com\finance\entity\FinancialRecord.class
+com\finance\controller\FinancialController.class
