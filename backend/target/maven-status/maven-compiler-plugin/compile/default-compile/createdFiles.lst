@@ -1,0 +1,5 @@
+com\logistics\model\Container.class
+com\logistics\model\ContainerPlanningResponse.class
+com\logistics\controller\ContainerPlanningController.class
+com\logistics\model\Cargo.class
+com\logistics\ContainerPlanningApplication.class
