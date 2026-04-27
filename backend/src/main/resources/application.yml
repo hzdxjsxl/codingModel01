@@ -1,0 +1,10 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: refund-service
+
+logging:
+  level:
+    com.example.refund: DEBUG
