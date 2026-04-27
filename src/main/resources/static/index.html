@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimCity 2.5D - 模拟城市</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-item {
+            color: white;
+            font-size: 14px;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .controls-panel {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            z-index: 1500;
+            background: rgba(20, 20, 40, 0.9);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 20px;
+            width: 280px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls-panel h3 {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .legend {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .legend h4 {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .legend-color.start {
+            background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+        }
+
+        .legend-color.end {
+            background: linear-gradient(135deg, #ff3d00 0%, #ff6e40 100%);
+        }
+
+        .legend-color.path {
+            background: linear-gradient(135deg, #ffd600 0%, #ffea00 100%);
+        }
+
+        .legend-color.building {
+            background: linear-gradient(135deg, #37474f 0%, #546e7a 100%);
+        }
+
+        .legend-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1500;
+            background: rgba(20, 20, 40, 0.9);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 20px;
+            width: 240px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel h3 {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .info-value.pending {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            perspective: 3000px;
+            overflow: visible;
+            position: relative;
+        }
+
+        #iso-map {
+            position: absolute;
+            transform-style: preserve-3d;
+            transform: rotateX(60deg) rotateZ(-45deg);
+            transform-origin: center center;
+            width: 0;
+            height: 0;
+            left: 50%;
+            top: 50%;
+        }
+
+        .tile {
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .tile:hover {
+            transform: translateZ(20px) !important;
+        }
+
+        .tile-top {
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .tile-water .tile-top {
+            background: linear-gradient(135deg, #0077be 0%, #00a8e8 50%, #0077be 100%);
+        }
+
+        .tile-grass .tile-top {
+            background: linear-gradient(135deg, #2d5a27 0%, #3c6e2f 25%, #4a7c59 50%, #5a8f6a 75%, #4a7c59 100%);
+        }
+
+        .tile-sand .tile-top {
+            background: linear-gradient(135deg, #c4a35a 0%, #d4b86a 25%, #e6c87a 50%, #d4b86a 75%, #c4a35a 100%);
+        }
+
+        .building {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            transform-style: preserve-3d;
+        }
+
+        .building-residential {
+            width: 36px;
+            height: 50px;
+            background: linear-gradient(180deg, #e53935 0%, #c62828 50%, #b71c1c 100%);
+        }
+
+        .building-residential::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 44px;
+            height: 15px;
+            background: linear-gradient(135deg, #5d4037 0%, #795548 100%);
+            clip-path: polygon(0 100%, 50% 0, 100% 100%);
+        }
+
+        .building-commercial {
+            width: 44px;
+            height: 70px;
+            background: linear-gradient(180deg, #1565c0 0%, #0d47a1 50%, #0d47a1 100%);
+        }
+
+        .building-industrial {
+            width: 48px;
+            height: 55px;
+            background: linear-gradient(180deg, #616161 0%, #424242 50%, #212121 100%);
+        }
+
+        .building-park {
+            width: 40px;
+            height: 25px;
+            background: linear-gradient(180deg, #2e7d32 0%, #1b5e20 100%);
+            border-radius: 50% 50% 0 0;
+        }
+
+        .building-park::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 20px;
+            background: linear-gradient(180deg, #5d4037 0%, #4e342e 100%);
+        }
+
+        .building-park::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #4caf50 0%, #388e3c 100%);
+            border-radius: 50%;
+        }
+
+        .path-tile .tile-top {
+            background: linear-gradient(135deg, rgba(255, 214, 0, 0.6) 0%, rgba(255, 234, 0, 0.6) 100%) !important;
+            box-shadow: inset 0 0 15px rgba(255, 214, 0, 0.8) !important;
+        }
+
+        #player {
+            position: absolute;
+            width: 32px;
+            height: 48px;
+            pointer-events: none;
+            display: none;
+            transform-style: preserve-3d;
+        }
+
+        .player-body {
+            width: 32px;
+            height: 48px;
+            position: relative;
+        }
+
+        .player-head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #ffcc80 0%, #ffb74d 100%);
+            border-radius: 50%;
+        }
+
+        .player-head::before {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 4px;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .player-head::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            right: 4px;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .player-torso {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 20px;
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            border-radius: 4px 4px 2px 2px;
+        }
+
+        .player-legs {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 12px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .player-leg {
+            width: 8px;
+            height: 12px;
+            background: linear-gradient(180deg, #1565c0 0%, #0d47a1 100%);
+            border-radius: 0 0 2px 2px;
+        }
+
+        .player-walking .player-leg:first-child {
+            animation: walkLeft 0.3s steps(2) infinite;
+        }
+
+        .player-walking .player-leg:last-child {
+            animation: walkRight 0.3s steps(2) infinite;
+        }
+
+        @keyframes walkLeft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes walkRight {
+            0%, 100% { transform: translateY(-3px); }
+            50% { transform: translateY(0); }
+        }
+
+        .marker {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            pointer-events: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            border: 3px solid white;
+            transform-style: preserve-3d;
+        }
+
+        .marker-start {
+            background: radial-gradient(circle, #00e676 0%, #00c853 100%);
+            z-index: 100000;
+        }
+
+        .marker-end {
+            background: radial-gradient(circle, #ff6e40 0%, #ff3d00 100%);
+            z-index: 100000;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .loading-subtext {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(20, 20, 40, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            z-index: 3000;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid #00c853;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ff3d00;
+        }
+
+        .toast.info {
+            border-left: 4px solid #00b0ff;
+        }
+
+        .test-info {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #64ffda;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 2500;
+            max-width: 500px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在加载地图...</div>
+        <div class="loading-subtext">100x100 等距地图渲染中</div>
+    </div>
+
+    <div class="header">
+        <h1>🏙️ SimCity 2.5D</h1>
+        <div class="status">
+            <div class="status-item" id="status-start">起点: 未设置</div>
+            <div class="status-item" id="status-end">终点: 未设置</div>
+            <div class="status-item" id="status-state">等待操作</div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <h3>🎮 操作指南</h3>
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">点击地图空地设置<strong>起点</strong>（绿色标记 S）</div>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">再次点击空地设置<strong>终点</strong>（红色标记 E）</div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-text">小人自动寻路并沿路径移动</div>
+        </div>
+        <div class="legend">
+            <h4>图例说明</h4>
+            <div class="legend-item">
+                <div class="legend-color start"></div>
+                <span class="legend-text">起点 (S)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color end"></div>
+                <span class="legend-text">终点 (E)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color path"></div>
+                <span class="legend-text">移动路径</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color building"></div>
+                <span class="legend-text">建筑物 (障碍物)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <h3>📍 当前信息</h3>
+        <div class="info-item">
+            <span class="info-label">地图大小</span>
+            <span class="info-value">100 × 100</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">起点坐标</span>
+            <span class="info-value pending" id="info-start">--</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">终点坐标</span>
+            <span class="info-value pending" id="info-end">--</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">路径长度</span>
+            <span class="info-value pending" id="info-path">--</span>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="iso-map">
+            <div id="player">
+                <div class="player-body">
+                    <div class="player-head"></div>
+                    <div class="player-torso"></div>
+                    <div class="player-legs">
+                        <div class="player-leg"></div>
+                        <div class="player-leg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="test-info" id="test-info" style="display: none;"></div>
+
+    <script>
+        const CONFIG = {
+            tileSize: 64,
+            mapWidth: 100,
+            mapHeight: 100,
+            apiUrl: 'http://localhost:9090/api/map'
+        };
+
+        let mapData = [];
+        let startPoint = null;
+        let endPoint = null;
+        let path = [];
+        let currentMarkers = [];
+        let playerElement = null;
+        let isAnimating = false;
+        let testInfoEl = null;
+
+        function showTestInfo(msg) {
+            console.log('[TEST]', msg);
+            if (testInfoEl) {
+                testInfoEl.style.display = 'block';
+                testInfoEl.innerHTML = msg.replace(/\n/g, '<br>');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateStatus() {
+            const statusStart = document.getElementById('status-start');
+            const statusEnd = document.getElementById('status-end');
+            const statusState = document.getElementById('status-state');
+            const infoStart = document.getElementById('info-start');
+            const infoEnd = document.getElementById('info-end');
+            const infoPath = document.getElementById('info-path');
+
+            if (startPoint) {
+                statusStart.textContent = `起点: (${startPoint.x}, ${startPoint.y})`;
+                statusStart.style.background = 'rgba(0, 200, 83, 0.3)';
+                infoStart.textContent = `(${startPoint.x}, ${startPoint.y})`;
+                infoStart.classList.remove('pending');
+            } else {
+                statusStart.textContent = '起点: 未设置';
+                statusStart.style.background = 'rgba(255, 255, 255, 0.15)';
+                infoStart.textContent = '--';
+                infoStart.classList.add('pending');
+            }
+
+            if (endPoint) {
+                statusEnd.textContent = `终点: (${endPoint.x}, ${endPoint.y})`;
+                statusEnd.style.background = 'rgba(255, 61, 0, 0.3)';
+                infoEnd.textContent = `(${endPoint.x}, ${endPoint.y})`;
+                infoEnd.classList.remove('pending');
+            } else {
+                statusEnd.textContent = '终点: 未设置';
+                statusEnd.style.background = 'rgba(255, 255, 255, 0.15)';
+                infoEnd.textContent = '--';
+                infoEnd.classList.add('pending');
+            }
+
+            if (path && path.length > 0) {
+                infoPath.textContent = path.length + ' 格';
+                infoPath.classList.remove('pending');
+            } else {
+                infoPath.textContent = '--';
+                infoPath.classList.add('pending');
+            }
+
+            if (isAnimating) {
+                statusState.textContent = '移动中...';
+                statusState.style.background = 'rgba(255, 214, 0, 0.3)';
+            } else if (startPoint && endPoint && path) {
+                statusState.textContent = '已完成';
+                statusState.style.background = 'rgba(0, 200, 83, 0.3)';
+            } else if (startPoint) {
+                statusState.textContent = '等待设置终点';
+                statusState.style.background = 'rgba(255, 255, 255, 0.15)';
+            } else {
+                statusState.textContent = '等待操作';
+                statusState.style.background = 'rgba(255, 255, 255, 0.15)';
+            }
+        }
+
+        class IsometricCoordinate {
+            static cartesianToIsometric(x, y) {
+                const isoX = (x - y) * (CONFIG.tileSize / 2);
+                const isoY = (x + y) * (CONFIG.tileSize / 4);
+                return { isoX, isoY };
+            }
+        }
+
+        class AStarPathfinder {
+            constructor(grid) {
+                this.grid = grid;
+            }
+
+            findPath(startX, startY, endX, endY) {
+                const openList = [];
+                const closedList = new Set();
+                const startNode = {
+                    x: startX,
+                    y: startY,
+                    g: 0,
+                    h: Math.abs(startX - endX) + Math.abs(startY - endY),
+                    f: 0,
+                    parent: null
+                };
+                startNode.f = startNode.g + startNode.h;
+                openList.push(startNode);
+
+                while (openList.length > 0) {
+                    openList.sort((a, b) => a.f - b.f);
+                    const currentNode = openList.shift();
+
+                    if (currentNode.x === endX && currentNode.y === endY) {
+                        const result = [];
+                        let curr = currentNode;
+                        while (curr) {
+                            result.unshift({ x: curr.x, y: curr.y });
+                            curr = curr.parent;
+                        }
+                        return result;
+                    }
+
+                    closedList.add(`${currentNode.x},${currentNode.y}`);
+
+                    const directions = [
+                        { dx: 0, dy: -1 },
+                        { dx: 0, dy: 1 },
+                        { dx: -1, dy: 0 },
+                        { dx: 1, dy: 0 }
+                    ];
+
+                    for (const dir of directions) {
+                        const nx = currentNode.x + dir.dx;
+                        const ny = currentNode.y + dir.dy;
+
+                        if (nx < 0 || nx >= CONFIG.mapWidth || ny < 0 || ny >= CONFIG.mapHeight) continue;
+                        if (closedList.has(`${nx},${ny}`)) continue;
+                        
+                        const tile = this.grid[ny]?.[nx];
+                        if (!tile) continue;
+                        if (tile.buildingTypeId > 0 && tile.buildingTypeId !== 4) continue;
+                        if (tile.elevation < 1) continue;
+
+                        const tentativeG = currentNode.g + 1;
+                        const existingNode = openList.find(n => n.x === nx && n.y === ny);
+
+                        if (!existingNode) {
+                            const newNode = {
+                                x: nx,
+                                y: ny,
+                                g: tentativeG,
+                                h: Math.abs(nx - endX) + Math.abs(ny - endY),
+                                f: 0,
+                                parent: currentNode
+                            };
+                            newNode.f = newNode.g + newNode.h;
+                            openList.push(newNode);
+                        } else if (tentativeG < existingNode.g) {
+                            existingNode.g = tentativeG;
+                            existingNode.f = existingNode.g + existingNode.h;
+                            existingNode.parent = currentNode;
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        class MapRenderer {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.tiles = [];
+            }
+
+            render() {
+                playerElement = document.getElementById('player');
+                this.container.innerHTML = '';
+                this.tiles = [];
+                this.container.appendChild(playerElement);
+
+                const sortedTiles = [];
+                let validTileCount = 0;
+                let undefinedTileCount = 0;
+                
+                for (let y = 0; y < mapData.length; y++) {
+                    for (let x = 0; x < mapData[y].length; x++) {
+                        const tile = mapData[y][x];
+                        if (tile !== undefined) {
+                            const depth = x + y + tile.elevation * 100;
+                            sortedTiles.push({ x, y, tile, depth });
+                            validTileCount++;
+                        } else {
+                            undefinedTileCount++;
+                        }
+                    }
+                }
+                
+                console.log('[Renderer] Valid tiles:', validTileCount, 'Undefined tiles:', undefinedTileCount);
+
+                sortedTiles.sort((a, b) => a.depth - b.depth);
+
+                for (const item of sortedTiles) {
+                    this.createTile(item.x, item.y, item.tile);
+                }
+
+                console.log('[Renderer] Map rendered with', this.tiles.length, 'tiles');
+            }
+
+            createTile(x, y, tileData) {
+                const { isoX, isoY } = IsometricCoordinate.cartesianToIsometric(x, y);
+                const depth = x + y + tileData.elevation * 100;
+
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.x = x;
+                tile.dataset.y = y;
+                tile.style.left = `${isoX}px`;
+                tile.style.top = `${isoY}px`;
+                tile.style.zIndex = Math.floor(depth);
+
+                if (tileData.elevation < 1) {
+                    tile.classList.add('tile-water');
+                } else if (tileData.elevation < 3) {
+                    tile.classList.add('tile-grass');
+                } else {
+                    tile.classList.add('tile-sand');
+                }
+
+                const tileTop = document.createElement('div');
+                tileTop.className = 'tile-top';
+                tile.appendChild(tileTop);
+
+                tile.style.transform = `translateZ(${tileData.elevation * 10}px)`;
+
+                if (tileData.buildingTypeId > 0) {
+                    const building = document.createElement('div');
+                    building.className = 'building';
+                    
+                    switch (tileData.buildingTypeId) {
+                        case 1:
+                            building.classList.add('building-residential');
+                            break;
+                        case 2:
+                            building.classList.add('building-commercial');
+                            break;
+                        case 3:
+                            building.classList.add('building-industrial');
+                            break;
+                        case 4:
+                            building.classList.add('building-park');
+                            break;
+                    }
+                    tile.appendChild(building);
+                }
+
+                tile.addEventListener('click', (e) => this.handleTileClick(x, y, e));
+                this.container.appendChild(tile);
+                this.tiles.push({ element: tile, x, y });
+            }
+
+            handleTileClick(x, y, event) {
+                if (isAnimating) {
+                    showToast('请等待当前移动完成', 'info');
+                    return;
+                }
+
+                const tile = mapData[y][x];
+                
+                if (tile.buildingTypeId > 0 && tile.buildingTypeId !== 4) {
+                    showToast('无法在建筑物上设置点！', 'error');
+                    return;
+                }
+
+                if (tile.elevation < 1) {
+                    showToast('无法在水面上设置点！', 'error');
+                    return;
+                }
+
+                if (!startPoint) {
+                    startPoint = { x, y };
+                    this.showMarker(x, y, 'marker-start', 'S');
+                    showToast(`起点已设置: (${x}, ${y})`, 'success');
+                    console.log('[Click] Start point set:', x, y);
+                } else if (!endPoint) {
+                    if (x === startPoint.x && y === startPoint.y) {
+                        showToast('终点不能与起点相同！', 'error');
+                        return;
+                    }
+                    endPoint = { x, y };
+                    this.showMarker(x, y, 'marker-end', 'E');
+                    showToast(`终点已设置: (${x}, ${y})，开始寻路...`, 'info');
+                    console.log('[Click] End point set:', x, y);
+                    this.calculatePath();
+                } else {
+                    this.clearAll();
+                    startPoint = { x, y };
+                    endPoint = null;
+                    path = [];
+                    this.showMarker(x, y, 'marker-start', 'S');
+                    showToast(`起点已重置: (${x}, ${y})`, 'info');
+                }
+
+                updateStatus();
+            }
+
+            showMarker(x, y, className, label) {
+                const { isoX, isoY } = IsometricCoordinate.cartesianToIsometric(x, y);
+                const tile = mapData[y]?.[x];
+                const elevation = tile ? tile.elevation : 1;
+                const elevationZ = elevation * 10 + 500;
+
+                console.log('[showMarker] Creating marker at:', x, y, 'elevation:', elevation, 'tile exists:', tile !== undefined);
+
+                const marker = document.createElement('div');
+                marker.className = 'marker ' + className;
+                marker.textContent = label;
+                
+                const markerLeft = isoX + (CONFIG.tileSize / 2) - 14;
+                const markerTop = isoY + (CONFIG.tileSize / 2) - 14;
+                
+                marker.style.left = `${markerLeft}px`;
+                marker.style.top = `${markerTop}px`;
+                marker.style.transform = `translateZ(${elevationZ}px)`;
+                
+                this.container.appendChild(marker);
+                currentMarkers.push(marker);
+                
+                console.log(`[Marker] Created ${label} at (${x},${y}): left=${markerLeft}, top=${markerTop}, z=${elevationZ}`);
+            }
+
+            clearMarkers() {
+                currentMarkers.forEach(marker => marker.remove());
+                currentMarkers = [];
+            }
+
+            clearPathHighlight() {
+                document.querySelectorAll('.path-tile').forEach(el => {
+                    el.classList.remove('path-tile');
+                });
+            }
+
+            clearAll() {
+                this.clearMarkers();
+                this.clearPathHighlight();
+                if (playerElement) {
+                    playerElement.style.display = 'none';
+                }
+            }
+
+            async calculatePath() {
+                if (!startPoint || !endPoint) return;
+
+                const pathfinder = new AStarPathfinder(mapData);
+                path = pathfinder.findPath(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+
+                if (path) {
+                    console.log('[Path] Found path with', path.length, 'steps:', path);
+                    showToast(`找到路径，共 ${path.length} 格`, 'success');
+                    this.highlightPath(path);
+                    updateStatus();
+                    await this.movePlayerAlongPath(path);
+                } else {
+                    console.log('[Path] No path found!');
+                    showToast('无法找到路径！障碍物阻挡。', 'error');
+                    this.clearMarkers();
+                    startPoint = null;
+                    endPoint = null;
+                    updateStatus();
+                }
+            }
+
+            highlightPath(pathPoints) {
+                this.clearPathHighlight();
+
+                for (const point of pathPoints) {
+                    const tileElement = this.tiles.find(t => t.x === point.x && t.y === point.y);
+                    if (tileElement) {
+                        tileElement.element.classList.add('path-tile');
+                    }
+                }
+            }
+
+            async movePlayerAlongPath(pathPoints) {
+                if (pathPoints.length === 0) return;
+
+                isAnimating = true;
+                updateStatus();
+
+                playerElement.style.display = 'block';
+                playerElement.classList.add('player-walking');
+
+                console.log('[Player] Starting movement along path with', pathPoints.length, 'points');
+
+                for (let i = 0; i < pathPoints.length; i++) {
+                    const point = pathPoints[i];
+                    await this.movePlayerTo(point.x, point.y);
+                }
+
+                playerElement.classList.remove('player-walking');
+                
+                const lastPoint = pathPoints[pathPoints.length - 1];
+                console.log(`[Player] Arrived at destination (${lastPoint.x}, ${lastPoint.y}), notifying backend...`);
+                await this.notifyBackend(lastPoint.x, lastPoint.y);
+
+                showToast(`到达终点: (${lastPoint.x}, ${lastPoint.y})`, 'success');
+
+                isAnimating = false;
+                updateStatus();
+
+                setTimeout(() => {
+                    this.clearAll();
+                    startPoint = null;
+                    endPoint = null;
+                    path = [];
+                    updateStatus();
+                }, 3000);
+            }
+
+            async movePlayerTo(x, y) {
+                const { isoX, isoY } = IsometricCoordinate.cartesianToIsometric(x, y);
+                const tile = mapData[y]?.[x];
+                const elevation = tile ? tile.elevation : 1;
+                
+                const playerLeft = isoX + (CONFIG.tileSize / 2) - 16;
+                const playerTop = isoY - elevation * 10 - 40;
+                const playerZ = elevation * 10 + 500;
+                
+                playerElement.style.left = `${playerLeft}px`;
+                playerElement.style.top = `${playerTop}px`;
+                playerElement.style.transform = `translateZ(${playerZ}px)`;
+                
+                console.log(`[Player] Moved to (${x},${y}): left=${playerLeft}, top=${playerTop}, z=${playerZ}, elevation=${elevation}, tile exists=${tile !== undefined}`);
+
+                return new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            async notifyBackend(x, y) {
+                try {
+                    console.log(`[Backend] Sending arrival notification: x=${x}, y=${y}`);
+                    showTestInfo(`✓ 正在通知后端: x=${x}, y=${y}...`);
+                    
+                    const response = await fetch(`${CONFIG.apiUrl}/arrival`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ x, y })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.text();
+                        console.log('[Backend] Notification successful:', result);
+                        showTestInfo(`✓ 后端通知成功! x=${x}, y=${y}\n响应: ${result}`);
+                    } else {
+                        console.error('[Backend] Notification failed with status:', response.status);
+                        showTestInfo(`✗ 后端通知失败! 状态: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('[Backend] Notification failed:', error);
+                    showTestInfo(`✗ 后端通知失败! 错误: ${error.message}`);
+                }
+            }
+        }
+
+        async function loadMapData() {
+            try {
+                testInfoEl = document.getElementById('test-info');
+                showTestInfo('正在加载地图数据...');
+                
+                console.log('[Init] Loading map data from:', CONFIG.apiUrl);
+                const response = await fetch(CONFIG.apiUrl);
+                const data = await response.json();
+                console.log('[Init] Map data received:', data.width, 'x', data.height, 'tiles');
+                console.log('[Init] tiles count:', data.tiles ? data.tiles.length : 'undefined');
+                if (data.tiles && data.tiles.length > 0) {
+                    console.log('[Init] First tile sample:', data.tiles[0]);
+                }
+                
+                mapData = [];
+                for (let y = 0; y < data.height; y++) {
+                    mapData[y] = new Array(data.width);
+                }
+                
+                let filledCount = 0;
+                if (data.tiles && data.tiles.length > 0) {
+                    for (const tile of data.tiles) {
+                        if (tile.y >= 0 && tile.y < data.height && tile.x >= 0 && tile.x < data.width) {
+                            mapData[tile.y][tile.x] = {
+                                elevation: tile.elevation,
+                                buildingTypeId: tile.buildingTypeId
+                            };
+                            filledCount++;
+                        }
+                    }
+                }
+                console.log('[Init] Filled', filledCount, 'tiles into mapData');
+
+                const loadingEl = document.getElementById('loading');
+                loadingEl.classList.add('hidden');
+                
+                setTimeout(() => {
+                    loadingEl.style.display = 'none';
+                }, 500);
+                
+                const renderer = new MapRenderer('iso-map');
+                renderer.render();
+                
+                console.log('[Init] Map loaded successfully');
+                showToast('地图加载完成！点击空地开始设置路径', 'success');
+                showTestInfo('地图加载完成! 开始自动测试...');
+
+                setTimeout(() => {
+                    runAutoTest(renderer);
+                }, 500);
+            } catch (error) {
+                console.error('[Init] Failed to load map:', error);
+                document.querySelector('.loading-text').textContent = '加载失败';
+                document.querySelector('.loading-subtext').textContent = '请确保后端服务已启动 (http://localhost:9090)';
+                showTestInfo(`加载失败: ${error.message}`);
+            }
+        }
+
+        async function runAutoTest(renderer) {
+            console.log('========== [自动测试开始] ==========');
+            showTestInfo('开始自动测试...\n1. 寻找有效起点和终点...');
+            
+            let testStartX = 50;
+            let testStartY = 50;
+            let testEndX = 55;
+            let testEndY = 52;
+
+            while (testStartY < mapData.length) {
+                const tile = mapData[testStartY]?.[testStartX];
+                if (tile && tile.elevation >= 1 && 
+                    (tile.buildingTypeId === 0 || tile.buildingTypeId === 4)) {
+                    break;
+                }
+                testStartX++;
+                if (testStartX > 60) {
+                    testStartX = 50;
+                    testStartY++;
+                }
+                if (testStartY > 60) {
+                    testStartX = 10;
+                    testStartY = 10;
+                    break;
+                }
+            }
+
+            testEndX = testStartX + 3;
+            testEndY = testStartY + 2;
+            while (testEndY < mapData.length) {
+                const tile = mapData[testEndY]?.[testEndX];
+                if (tile && tile.elevation >= 1 && 
+                    (tile.buildingTypeId === 0 || tile.buildingTypeId === 4) &&
+                    (testEndX !== testStartX || testEndY !== testStartY)) {
+                    break;
+                }
+                testEndX++;
+                if (testEndX > testStartX + 10) {
+                    testEndX = testStartX + 3;
+                    testEndY++;
+                }
+                if (testEndY > testStartY + 10) {
+                    testEndX = testStartX + 2;
+                    testEndY = testStartY;
+                    break;
+                }
+            }
+
+            console.log(`[自动测试] 测试起点: (${testStartX}, ${testStartY})`);
+            console.log(`[自动测试] 测试终点: (${testEndX}, ${testEndY})`);
+            showTestInfo(`测试起点: (${testStartX}, ${testStartY})\n测试终点: (${testEndX}, ${testEndY})\n\n2. 创建标记点...`);
+
+            console.log('[自动测试] 1. 测试标记点显示...');
+            renderer.showMarker(testStartX, testStartY, 'marker-start', 'S');
+            renderer.showMarker(testEndX, testEndY, 'marker-end', 'E');
+            
+            const markers = document.querySelectorAll('.marker');
+            console.log(`[自动测试] 找到 ${markers.length} 个标记点`);
+            markers.forEach((m, i) => {
+                console.log(`  标记点 ${i}: left=${m.style.left}, top=${m.style.top}, transform=${m.style.transform}`);
+            });
+
+            showTestInfo(`✓ 标记点已创建!\n数量: ${markers.length}\n检查页面上的绿色(S)和红色(E)标记点\n\n3. 测试 A* 寻路算法...`);
+
+            console.log('[自动测试] 2. 测试 A* 寻路算法...');
+            const pathfinder = new AStarPathfinder(mapData);
+            const testPath = pathfinder.findPath(testStartX, testStartY, testEndX, testEndY);
+            
+            if (testPath) {
+                console.log(`[自动测试] ✓ 寻路成功，路径长度: ${testPath.length}`);
+                console.log(`[自动测试] 路径: ${JSON.stringify(testPath)}`);
+                showTestInfo(`✓ 寻路成功!\n路径长度: ${testPath.length} 格\n\n4. 测试小人移动和后端通知...`);
+                
+                startPoint = { x: testStartX, y: testStartY };
+                endPoint = { x: testEndX, y: testEndY };
+                path = testPath;
+                renderer.highlightPath(path);
+                updateStatus();
+                
+                await renderer.movePlayerAlongPath(path);
+            } else {
+                console.log('[自动测试] ✗ 寻路失败');
+                showTestInfo('✗ 寻路失败! 请尝试点击其他位置');
+            }
+
+            console.log('========== [自动测试完成] ==========');
+        }
+
+        loadMapData();
+    </script>
+</body>
+</html>
