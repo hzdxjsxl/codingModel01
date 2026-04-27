@@ -1,0 +1,5 @@
+com\crdt\collaborativedocs\config\WebSocketConfig.class
+com\crdt\collaborativedocs\model\OperationMessage.class
+com\crdt\collaborativedocs\model\Operation.class
+com\crdt\collaborativedocs\handler\DocumentWebSocketHandler.class
+com\crdt\collaborativedocs\CollaborativeDocsApplication.class
