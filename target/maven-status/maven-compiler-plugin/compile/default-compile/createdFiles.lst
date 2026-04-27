@@ -1,0 +1,10 @@
+com\simcity\dto\MapDataResponse$TileData.class
+com\simcity\config\DataInitializer.class
+com\simcity\SimCityApplication.class
+com\simcity\service\MapService.class
+com\simcity\controller\MapController.class
+com\simcity\dto\MapDataResponse.class
+com\simcity\entity\MapTile.class
+com\simcity\controller\MapController$ArrivalRequest.class
+com\simcity\repository\MapTileRepository.class
+com\simcity\config\CorsConfig.class
